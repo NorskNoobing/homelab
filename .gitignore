@@ -1,0 +1,6 @@
+*.auto.tfvars
+*.tfstate
+*.tfstate.backup
+*.hcl
+.terraform
+inventory.ini

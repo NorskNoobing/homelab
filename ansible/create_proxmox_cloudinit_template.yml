@@ -1,0 +1,122 @@
+- name: Create Ubuntu Cloud-Init Template on Proxmox Node
+  hosts: "{{ target_node }}"
+  become: true
+  vars:
+    vmid: "9000"
+    storage: "local-lvm"
+    bridge: "vmbr0"
+    ubuntu_img_url: "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
+    os_storage: "local-lvm"          # Storage for the OS disk
+    efi_storage: "local-lvm"         # Storage for the EFI disk (raw only)
+
+  vars_prompt:
+    - name: "ciuser"
+      prompt: "Enter your cloudinit username"
+      private: no
+
+    - name: "cipassword"
+      prompt: "Enter your cloudinit password"
+      private: yes
+
+    - name: "cipassword_confirm"
+      prompt: "Confirm the password"
+      private: yes
+
+  pre_tasks:
+    - name: Ensure passwords match
+      ansible.builtin.assert:
+        that: cipassword == cipassword_confirm
+        fail_msg: "Passwords do not match. Please run the playbook again."
+        success_msg: "Passwords match."
+
+    - name: Check if VMID {{ vmid }} exists on any node
+      shell: ls /etc/pve/nodes/*/qemu-server/{{ vmid }}.conf
+      register: vmid_check
+      failed_when: false
+      changed_when: false
+      ignore_errors: true
+      no_log: true
+
+    - name: Set fact if VMID exists
+      set_fact:
+        vmid_exists: "{{ vmid_check.rc == 0 }}"
+
+    - name: Fail early if VMID already exists
+      fail:
+        msg: "VMID {{ vmid }} already exists on the cluster. Aborting."
+      when: vmid_exists
+
+  tasks:
+    ### START - Set template_name ###
+    - name: Extract base URL from ubuntu_img_url
+      set_fact:
+        ubuntu_img_base_url: "{{ ubuntu_img_url | regex_replace('/[^/]+$', '/') }}"
+
+    - name: Fetch Jammy current index page
+      uri:
+        url: "{{ ubuntu_img_base_url }}"
+        return_content: yes
+      register: jammy_index
+
+    - name: Extract Ubuntu version and build date without square brackets, single-, and double quotes
+      set_fact:
+        ubuntu_jammy_version: "{{ jammy_index.content | regex_search('<h1>Ubuntu ([0-9.]+) .*?\\[([0-9]{8})\\]</h1>', '\\1') | regex_replace('[\\[\\]]', '') | regex_replace(\"'\", '') }}"
+        ubuntu_jammy_date: "{{ jammy_index.content | regex_search('<h1>Ubuntu [0-9.]+ .*?\\[([0-9]{8})\\]</h1>', '\\1') | regex_replace('[\\[\\]]', '') | regex_replace(\"'\", '') }}"
+
+    - name: Build dynamic cloud-init template name
+      set_fact:
+        template_name: ubuntu-{{ ubuntu_jammy_version }}-cloudinit-{{ ubuntu_jammy_date }}
+    ### END - Set template_name ###
+
+    - name: Download Ubuntu cloud image
+      get_url:
+        url: "{{ ubuntu_img_url }}"
+        dest: "/var/lib/vz/template/iso/{{ template_name }}.img"
+
+    - name: Create base VM with UEFI BIOS and OVMF
+      command: >
+        qm create {{ vmid }}
+        --name {{ template_name }}
+        --memory 2048 --cores 2
+        --net0 virtio,bridge={{ bridge }}
+        --bios ovmf
+        --machine q35
+
+    - name: Import disk to Proxmox (extra disk for OS)
+      command: >
+        qm importdisk {{ vmid }}
+        /var/lib/vz/template/iso/{{ template_name }}.img {{ os_storage }}
+
+    - name: Attach disk to VM
+      command: >
+        qm set {{ vmid }}
+        --scsihw virtio-scsi-pci
+        --scsi0 {{ os_storage }}:vm-{{ vmid }}-disk-0
+
+    - name: Add EFI disk
+      command: >
+        qm set {{ vmid }}
+        --efidisk0 {{ efi_storage }}:0,format=raw,efitype=4m
+
+    - name: Add cloud-init drive
+      command: >
+        qm set {{ vmid }} --ide2 {{ os_storage }}:cloudinit
+
+    - name: Set boot order
+      command: >
+        qm set {{ vmid }} --boot c --bootdisk scsi0
+
+    # Most cloud-init images require a serial device for their display
+    - name: Set console
+      command: >
+        qm set {{ vmid }} --serial0 socket
+
+    - name: Set cloudinit username
+      command: qm set {{ vmid }} --ciuser {{ ciuser }}
+
+    - name: Set cloudinit password
+      command: qm set {{ vmid }} --cipassword {{ cipassword }}
+      no_log: true
+
+    - name: Convert VM to template
+      command: qm template {{ vmid }}

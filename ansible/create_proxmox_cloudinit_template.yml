@@ -1,13 +1,18 @@
+#########################################################
+#
+# Resources (missing earlier chats):
+#   - [ChatGPT - Proxmox template NFS storage](https://chatgpt.com/share/68b75b63-8a68-800d-8477-71de3944c3fb)
+#
+#########################################################
 - name: Create Ubuntu Cloud-Init Template on Proxmox Node
   hosts: "{{ target_node }}"
   become: true
   vars:
     vmid: "9000"
-    storage: "local-lvm"
+    storage: "truenas_proxmox_share"
     bridge: "vmbr0"
     ubuntu_img_url: "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
-    os_storage: "local-lvm"          # Storage for the OS disk
-    efi_storage: "local-lvm"         # Storage for the EFI disk (raw only)
+    os_storage: "truenas_proxmox_share"          # Storage for the OS disk
 
   vars_prompt:
     - name: "ciuser"
@@ -71,7 +76,7 @@
     - name: Download Ubuntu cloud image
       get_url:
         url: "{{ ubuntu_img_url }}"
-        dest: "/var/lib/vz/template/iso/{{ template_name }}.img"
+        dest: "/mnt/pve/truenas_proxmox_share/template/iso/{{ template_name }}.img"
 
     - name: Create base VM with UEFI BIOS and OVMF
       command: >
@@ -85,18 +90,19 @@
     - name: Import disk to Proxmox (extra disk for OS)
       command: >
         qm importdisk {{ vmid }}
-        /var/lib/vz/template/iso/{{ template_name }}.img {{ os_storage }}
+        /mnt/pve/truenas_proxmox_share/template/iso/{{ template_name }}.img {{ os_storage }}
 
-    - name: Attach disk to VM
-      command: >
-        qm set {{ vmid }}
-        --scsihw virtio-scsi-pci
-        --scsi0 {{ os_storage }}:vm-{{ vmid }}-disk-0
+    - name: Verify OS disk volid resolves
+      command: pvesm path {{ os_storage }}:{{ vmid }}/vm-{{ vmid }}-disk-0.raw
+      changed_when: false
 
-    - name: Add EFI disk
+    - name: Attach disk to VM (dir/NFS volid syntax)
       command: >
-        qm set {{ vmid }}
-        --efidisk0 {{ efi_storage }}:0,format=raw,efitype=4m
+        qm set {{ vmid }} --scsihw virtio-scsi-pci
+        --scsi0 {{ os_storage }}:{{ vmid }}/vm-{{ vmid }}-disk-0.raw
+
+    - name: Ensure boot order
+      command: qm set {{ vmid }} --boot order=scsi0
 
     - name: Add cloud-init drive
       command: >

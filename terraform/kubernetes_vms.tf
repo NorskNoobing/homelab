@@ -8,15 +8,18 @@ resource "proxmox_vm_qemu" "cloned_vms" {
 	full_clone  = true
 
 	os_type     = "cloud-init"
-	cpu_type    = "host"
-	sockets     = 1 # Amount of physical CPUs to assign to the VM
-	cores       = 4 # Amount of threads
 	balloon     = 4096 # Min memory
 	memory      = 8192 # Max memory
 	onboot      = true # Start VM on boot of Proxmox node
 	scsihw      = "virtio-scsi-pci"
 	agent  		= 1 # Enable qemu guest agent
 	kvm    		= true
+
+	cpu {
+		type 		= "host"
+		sockets     = 1 # Amount of physical CPUs to assign to the VM
+		cores       = 4 # Amount of threads
+	}
 
 	# Most cloud-init images require a serial device for their display
     # ------------------------------------------------------------------------
@@ -30,6 +33,12 @@ resource "proxmox_vm_qemu" "cloned_vms" {
 	# Enable UEFI BIOS
 	bios        = "ovmf"
 	machine     = "q35"
+
+	efidisk {
+		storage        	   = "local-lvm"  # where the efidisk (efivars) goes
+		efitype            = "4m"         # typical default; OK to omit
+		pre_enrolled_keys  = true         # if you want MS + distro keys preloaded (Secure Boot)
+	}
 
 	disks {
         scsi {
@@ -73,7 +82,8 @@ resource "proxmox_vm_qemu" "cloned_vms" {
 			sshkeys,
 			ciuser,
 			cipassword,
-			ipconfig0
+			ipconfig0,
+			tags
 		]
 	}
 }

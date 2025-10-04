@@ -62,10 +62,6 @@ variable "gateway" {
   type = string
 }
 
-variable "pve_user" {
-  type = string
-}
-
 variable "ssh_private_key_path" {
   type = string
 }

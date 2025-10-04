@@ -14,5 +14,5 @@ USERPROFILE_WSL=$(cmd.exe /c "echo %USERPROFILE%" | tr -d '\r' | sed 's#\\#/#g' 
 eval $(ssh-agent)
 ssh-add ~/.ssh/id_ed25519
 
-cd $USERPROFILE_WSL/repos/homelab/ansible
-ansible-playbook -i inventory.ini create_proxmox_cloudinit_template.yml -e target_node=PROXMOX_NODE_HOSTNAME
+cd $USERPROFILE_WSL/repos/homelab/ansible/cloudinit_template
+ansible-playbook create_proxmox_cloudinit_template.yml -i inventory/inventory.ini -e target_node=PROXMOX_NODE_HOSTNAME

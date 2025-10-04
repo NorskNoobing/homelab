@@ -1,0 +1,19 @@
+# [GitHub - JimsGarage ansible RKE2 all.yaml](https://github.com/JamesTurland/JimsGarage/blob/main/Ansible/Playbooks/RKE2/inventory/group_vars/all.yaml)
+---
+os: "linux"
+arch: "amd64"
+
+vip: 192.168.3.50
+
+metallb_version: v0.13.12 # https://github.com/metallb/metallb/releases
+lb_range: 192.168.3.80-192.168.3.90
+lb_pool_name: first-pool
+
+ansible_become: true
+ansible_become_method: sudo
+################################################################################
+# options to change default values
+# kube_vip_version: "v0.8.0" # https://github.com/kube-vip/kube-vip/releases
+# vip_interface: "eth0"
+# rke2_version: "v1.29.4+rke2r1" # https://github.com/rancher/rke2/releases
+# rke2_install_dir: "/usr/local/bin"

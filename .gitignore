@@ -1,4 +1,4 @@
-*.auto.tfvars
+terraform/**/*.auto.tfvars
 *.tfstate
 *.tfstate.backup
 *.hcl

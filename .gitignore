@@ -3,4 +3,4 @@
 *.tfstate.backup
 *.hcl
 .terraform
-inventory.ini
+ansible/**/inventory

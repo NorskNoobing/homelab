@@ -16,6 +16,6 @@ vms = {
 		hostname  = "RKE2_01" # Hostname for the VM.
 	}
 	"RKE2_02" = {
-		...
+		# Same as above for each VM you want to create.
 	}
 }

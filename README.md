@@ -14,14 +14,9 @@ GITHUB_REPO_PATH/scripts/bootstrap/Install-Ansible.ps1
 ```bash
 GITHUB_REPO_PATH/scripts/bootstrap/Add-SSHPrivatekeyWSL.sh
 ```
-5. Create the CloudInit template via Ansible by running the script below. Make
-sure to have the `inventory.ini` file properly set up with info for the Proxmox
-node you want to install the template on.
-```bash
-GITHUB_REPO_PATH/scripts/Create-ProxmoxCloudinitTemplate.sh
-```
-6. Create the VMs via OpenTofu by running the following script. Make sure to
-populate the `.auto.tfvars` file with the required values.
-```bash
-GITHUB_REPO_PATH/scripts/Invoke-KubeTerraformTemplate.sh
-```
+# Running scripts
+All of the initializer scripts are the `scripts` folder. You only have to go through the files in this folder, in order to execute commands, playbooks, etc.
+
+# Secrets and templates
+The files that are deemed secret with private info are `.gitignore`'d in this repo. Therefore I've added the `.templates` folder that have example templates of all these secret files.
+The `.templates` folder is structured from the root of the repo, so the template files could easily be merged to fill in and create the secret files from scratch.

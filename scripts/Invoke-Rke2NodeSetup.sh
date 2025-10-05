@@ -11,5 +11,5 @@ USERPROFILE_WSL=$(cmd.exe /c "echo %USERPROFILE%" | tr -d '\r' | sed 's#\\#/#g' 
 eval $(ssh-agent)
 ssh-add ~/.ssh/id_ed25519
 
-cd $USERPROFILE_WSL/repos/homelab/RKE2
+cd $USERPROFILE_WSL/repos/homelab/ansible/RKE2
 ansible-playbook site.yaml -i inventory/hosts.ini

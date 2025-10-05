@@ -17,6 +17,9 @@ GITHUB_REPO_PATH/scripts/bootstrap/Add-SSHPrivatekeyWSL.sh
 # Running scripts
 All of the initializer scripts are the `scripts` folder. You only have to go through the files in this folder, in order to execute commands, playbooks, etc.
 
+Most of the files in the `scripts` folder are currently just documentation of commands that has to be ran, and not actual scripts I would run confidently.
+It's best to run each command one-by-one just to be safe. I don't think I'll prioritize fixing these scripts, as they work fine as-is. 
+
 # Secrets and templates
 The files that are deemed secret with private info are `.gitignore`'d in this repo. Therefore I've added the `.templates` folder that have example templates of all these secret files.
 The `.templates` folder is structured from the root of the repo, so the template files could easily be merged to fill in and create the secret files from scratch.

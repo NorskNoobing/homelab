@@ -9,10 +9,10 @@
   become: true
   vars:
     vmid: "9000"
-    storage: "truenas_proxmox_share"
+    storage: "truenas_proxmox_megapool"
     bridge: "vmbr0"
     ubuntu_img_url: "https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img"
-    os_storage: "truenas_proxmox_share"          # Storage for the OS disk
+    os_storage: "truenas_proxmox_megapool"          # Storage for the OS disk
 
   vars_prompt:
     - name: "ciuser"
@@ -76,7 +76,7 @@
     - name: Download Ubuntu cloud image
       get_url:
         url: "{{ ubuntu_img_url }}"
-        dest: "/mnt/pve/truenas_proxmox_share/template/iso/{{ template_name }}.img"
+        dest: "/mnt/pve/{{ storage }}/template/iso/{{ template_name }}.img"
 
     - name: Create base VM with UEFI BIOS and OVMF
       command: >
@@ -90,7 +90,7 @@
     - name: Import disk to Proxmox (extra disk for OS)
       command: >
         qm importdisk {{ vmid }}
-        /mnt/pve/truenas_proxmox_share/template/iso/{{ template_name }}.img {{ os_storage }}
+        /mnt/pve/{{ storage }}/template/iso/{{ template_name }}.img {{ os_storage }}
 
     - name: Verify OS disk volid resolves
       command: pvesm path {{ os_storage }}:{{ vmid }}/vm-{{ vmid }}-disk-0.raw
